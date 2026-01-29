@@ -1,0 +1,19 @@
+{
+    "name": "skunk/suite-core",
+    "description": "Shared suite functionality for Skunk WordPress plugins — menu, dashboard, NUX onboarding, and product detection.",
+    "version": "1.0.0",
+    "type": "library",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Skunk Global",
+            "homepage": "https://skunkglobal.com"
+        }
+    ],
+    "autoload": {
+        "files": ["loader.php"]
+    },
+    "require": {
+        "php": ">=7.4"
+    }
+}
