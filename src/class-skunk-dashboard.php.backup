@@ -21,31 +21,9 @@ class Skunk_Dashboard {
 	public static function render() {
 		$products = Skunk_Product_Detect::get_active_map();
 		$show_nux = current_user_can( 'manage_options' ) && ! get_option( 'skunk_suite_onboarded', false );
-
-		// Build tabs from active products
-		if ( class_exists( 'Skunk_Masterbar' ) ) {
-			$tabs = array(
-				'home' => array( 'label' => 'Home', 'slug' => 'skunk-dashboard' ),
-			);
-
-			$all = Skunk_Product_Detect::get_all_products();
-			$tab_order = array( 'pages', 'forms', 'crm' );
-			foreach ( $tab_order as $key ) {
-				if ( Skunk_Product_Detect::is_active( $key ) ) {
-					$tabs[ $key ] = array(
-						'label' => $all[ $key ]['name'],
-						'slug'  => $all[ $key ]['menu_slug'],
-					);
-				}
-			}
-
-			$tabs['more']     = array( 'label' => 'More Products', 'slug' => 'skunk-more-products' );
-			$tabs['settings'] = array( 'label' => 'Settings',      'slug' => 'skunk-settings' );
-
-			Skunk_Masterbar::render( 'Suite', 'home', $tabs );
-		}
 		?>
-		<div class="skunk-dashboard" style="max-width: 960px; margin: 0 auto; padding: 24px;">
+		<div class="wrap skunk-dashboard">
+			<h1>Skunk Suite Dashboard</h1>
 
 			<?php self::render_welcome( $products ); ?>
 
@@ -62,10 +40,9 @@ class Skunk_Dashboard {
 					<?php
 					$all_products = Skunk_Product_Detect::get_all_products();
 					foreach ( $all_products as $key => $info ) :
-						$detection = Skunk_Product_Detect::detect( $key );
-						$state     = $detection['state'];
+						$active = $products[ $key ];
 					?>
-					<div class="skunk-dashboard__product-card <?php echo $state === 'active' ? 'is-active' : 'is-inactive'; ?>">
+					<div class="skunk-dashboard__product-card <?php echo $active ? 'is-active' : 'is-inactive'; ?>">
 						<span class="skunk-dashboard__product-icon" style="display:inline-flex;width:32px;height:32px;border-radius:8px;align-items:center;justify-content:center;background:<?php echo esc_attr( $info['color'] ); ?>;">
 							<?php echo Skunk_Icons::get( $info['icon'], 16 ); ?>
 						</span>
@@ -73,15 +50,11 @@ class Skunk_Dashboard {
 							<strong><?php echo esc_html( $info['name'] ); ?></strong>
 							<span><?php echo esc_html( $info['desc'] ); ?></span>
 						</div>
-						<?php if ( $state === 'active' ) : ?>
+						<?php if ( $active ) : ?>
 							<span class="skunk-dashboard__product-badge skunk-dashboard__product-badge--active">Active</span>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . $info['menu_slug'] ) ); ?>" class="skunk-dashboard__product-link">Open →</a>
-						<?php elseif ( $state === 'installed' ) : ?>
-							<span class="skunk-dashboard__product-badge skunk-dashboard__product-badge--installed">Inactive</span>
-							<a href="<?php echo esc_url( $detection['url'] ); ?>" class="skunk-dashboard__product-link skunk-dashboard__product-link--activate">Activate</a>
 						<?php else : ?>
 							<span class="skunk-dashboard__product-badge skunk-dashboard__product-badge--inactive">Not Installed</span>
-							<a href="<?php echo esc_url( $detection['url'] ); ?>" class="skunk-dashboard__product-link skunk-dashboard__product-link--install" target="_blank">Get Plugin →</a>
 						<?php endif; ?>
 					</div>
 					<?php endforeach; ?>
@@ -140,13 +113,8 @@ class Skunk_Dashboard {
 			.skunk-dashboard__product-badge { font-size: 11px; font-weight: 600; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; }
 			.skunk-dashboard__product-badge--active { background: #dcfce7; color: #15803d; }
 			.skunk-dashboard__product-badge--inactive { background: #f3f4f6; color: #6b7280; }
-			.skunk-dashboard__product-badge--installed { background: #fef3c7; color: #92400e; }
 			.skunk-dashboard__product-link { font-size: 13px; font-weight: 500; color: #E50914; text-decoration: none; padding: 6px 12px; border: 1px solid #E50914; border-radius: 6px; }
 			.skunk-dashboard__product-link:hover { background: #E50914; color: #fff; }
-			.skunk-dashboard__product-link--activate { border-color: #d97706; color: #d97706; }
-			.skunk-dashboard__product-link--activate:hover { background: #d97706; color: #fff; border-color: #d97706; }
-			.skunk-dashboard__product-link--install { border-color: #d1d5db; color: #374151; }
-			.skunk-dashboard__product-link--install:hover { background: #374151; color: #fff; border-color: #374151; }
 			.skunk-dashboard__stats-section { margin-bottom: 24px; }
 			.skunk-dashboard__cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
 			.skunk-dashboard__card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; }
@@ -232,22 +200,10 @@ class Skunk_Dashboard {
 		}
 
 		if ( ! $products['forms'] ) {
-			$forms_detect = Skunk_Product_Detect::detect( 'forms' );
-			if ( $forms_detect['state'] === 'installed' ) {
-				$items[] = array( 'done' => false, 'text' => '<a href="' . esc_url( $forms_detect['url'] ) . '">Activate Skunk Forms</a> to capture leads' );
-			} else {
-				$forms_info = Skunk_Product_Detect::get_product( 'forms' );
-				$items[] = array( 'done' => false, 'text' => '<a href="' . esc_url( $forms_info['landing'] ) . '" target="_blank">Get Skunk Forms</a> to capture leads' );
-			}
+			$items[] = array( 'done' => false, 'text' => '<a href="' . admin_url( 'plugin-install.php?s=skunkforms&tab=search&type=term' ) . '">Install Skunk Forms</a> to capture leads' );
 		}
 		if ( ! $products['crm'] ) {
-			$crm_detect = Skunk_Product_Detect::detect( 'crm' );
-			if ( $crm_detect['state'] === 'installed' ) {
-				$items[] = array( 'done' => false, 'text' => '<a href="' . esc_url( $crm_detect['url'] ) . '">Activate Skunk CRM</a> to manage contacts' );
-			} else {
-				$crm_info = Skunk_Product_Detect::get_product( 'crm' );
-				$items[] = array( 'done' => false, 'text' => '<a href="' . esc_url( $crm_info['landing'] ) . '" target="_blank">Get Skunk CRM</a> to manage contacts' );
-			}
+			$items[] = array( 'done' => false, 'text' => '<a href="' . admin_url( 'plugin-install.php?s=skunkcrm&tab=search&type=term' ) . '">Install SkunkCRM</a> to manage contacts' );
 		}
 
 		echo '<ul>';
@@ -274,7 +230,7 @@ class Skunk_Dashboard {
 		$nonce = wp_create_nonce( 'skunk_nux_nonce' );
 
 		$product_names = array();
-		if ( $products['crm']['state'] === 'active' ) $product_names[] = 'Skunk CRM';
+		if ( $products['crm']['state'] === 'active' ) $product_names[] = 'SkunkCRM';
 		if ( $products['forms']['state'] === 'active' ) $product_names[] = 'Skunk Forms';
 		if ( $products['pages']['state'] === 'active' ) $product_names[] = 'Skunk Pages';
 
@@ -568,196 +524,35 @@ class Skunk_Dashboard {
 	}
 
 	/**
-	 * Render the More Products page
+	 * Render settings page
 	 *
-	 * Delegates to CRM's rich version if available, otherwise renders a simple product grid.
-	 */
-	public static function render_more_products() {
-		// CRM has the full More Products page with extensions tab — delegate
-		if ( Skunk_Product_Detect::is_active( 'crm' ) && method_exists( 'SkunkCRM', 'get_instance' ) ) {
-			$crm = SkunkCRM::get_instance();
-			if ( method_exists( $crm, 'more_products_page' ) ) {
-				$crm->more_products_page();
-				return;
-			}
-		}
-
-		// Fallback: simple product grid with masterbar
-		if ( class_exists( 'Skunk_Masterbar' ) ) {
-			Skunk_Masterbar::render( 'More Products', '', array(), array( 'hide_tabs' => true ) );
-		}
-
-		$all_products = Skunk_Product_Detect::get_all_products();
-		$future = array(
-			'analytics'   => array( 'name' => 'Skunk Analytics',    'desc' => 'GA4 & GSC made beautiful',              'color' => '#10B981', 'url' => 'https://skunkanalytics.com' ),
-			'social'      => array( 'name' => 'Skunk Social',       'desc' => 'Content that doesn\'t STINK',           'color' => '#F59E0B', 'url' => 'https://skunksocial.com' ),
-			'courses'     => array( 'name' => 'Skunk Courses',      'desc' => 'Courses that don\'t STINK',             'color' => '#EC4899', 'url' => 'https://skunkcourses.com' ),
-			'memberships' => array( 'name' => 'Skunk Memberships',  'desc' => 'Sweet smelling memberships',            'color' => '#6366F1', 'url' => 'https://skunkmemberships.com' ),
-		);
-		?>
-		<div style="max-width: 960px; margin: 0 auto; padding: 24px;">
-			<h2 style="font-size: 20px; font-weight: 700; margin: 0 0 8px;">Skunk Suite Products</h2>
-			<p style="color: #6b7280; margin: 0 0 24px;">Everything you need to grow your business with WordPress.</p>
-
-			<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 32px;">
-				<?php foreach ( $all_products as $key => $info ) :
-					$detection = Skunk_Product_Detect::detect( $key );
-				?>
-				<div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">
-					<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-						<div style="width: 40px; height: 40px; background: <?php echo esc_attr( $info['color'] ); ?>; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-							<?php echo Skunk_Icons::get( $info['icon'], 20 ); ?>
-						</div>
-						<div>
-							<strong style="font-size: 15px; color: #111;"><?php echo esc_html( $info['name'] ); ?></strong>
-							<div style="font-size: 12px; color: #6b7280;"><?php echo esc_html( $info['desc'] ); ?></div>
-						</div>
-					</div>
-					<?php if ( $detection['state'] === 'active' ) : ?>
-						<span style="font-size: 12px; font-weight: 600; color: #15803d;">✓ Active</span>
-					<?php elseif ( $detection['state'] === 'installed' ) : ?>
-						<a href="<?php echo esc_url( $detection['url'] ); ?>" style="font-size: 13px; font-weight: 600; color: #d97706; text-decoration: none;">Activate →</a>
-					<?php else : ?>
-						<a href="<?php echo esc_url( $info['landing'] ); ?>" target="_blank" style="font-size: 13px; font-weight: 600; color: #E50914; text-decoration: none;">Learn more →</a>
-					<?php endif; ?>
-				</div>
-				<?php endforeach; ?>
-
-				<?php foreach ( $future as $key => $prod ) : ?>
-				<div style="background: #f9fafb; border: 1px dashed #d1d5db; border-radius: 10px; padding: 24px; display: flex; flex-direction: column;">
-					<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-						<div style="width: 40px; height: 40px; background: <?php echo esc_attr( $prod['color'] ); ?>; border-radius: 10px; display: flex; align-items: center; justify-content: center; opacity: 0.7;">
-							<span style="font-weight: 700; font-size: 16px; color: #fff;">S</span>
-						</div>
-						<div>
-							<strong style="font-size: 15px; color: #111;"><?php echo esc_html( $prod['name'] ); ?></strong>
-							<div style="font-size: 12px; color: #6b7280;"><?php echo esc_html( $prod['desc'] ); ?></div>
-						</div>
-					</div>
-					<span style="font-size: 12px; font-weight: 600; color: #9ca3af;">Coming Soon</span>
-				</div>
-				<?php endforeach; ?>
-			</div>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Render unified settings page
-	 *
-	 * Delegates to the best available settings page:
-	 * - CRM has a full React settings UI with product tabs (handles Forms too)
-	 * - Falls back to a simple product-tab layout for other combos
+	 * This is a placeholder that delegates to the appropriate plugin's settings.
+	 * Each plugin can hook into this via filters.
 	 */
 	public static function render_settings() {
-		$product = isset( $_GET['product'] ) ? sanitize_key( $_GET['product'] ) : '';
+		$product = isset( $_GET['product'] ) ? sanitize_text_field( $_GET['product'] ) : '';
 
-		// Build product tabs based on what's installed
-		$tabs = array();
-		if ( Skunk_Product_Detect::is_active( 'crm' ) ) {
-			$tabs['crm'] = array( 'label' => 'CRM', 'slug' => 'skunk-settings&product=crm' );
-		}
-		if ( Skunk_Product_Detect::is_active( 'forms' ) ) {
-			$tabs['forms'] = array( 'label' => 'Forms', 'slug' => 'skunk-settings&product=forms' );
-		}
-		if ( Skunk_Product_Detect::is_active( 'pages' ) ) {
-			$tabs['pages'] = array( 'label' => 'Pages', 'slug' => 'skunk-settings&product=pages' );
-		}
+		// Try to delegate to a registered plugin's settings handler
+		$handled = apply_filters( 'skunk_suite_render_settings', false, $product );
 
-		// License tab — always visible
-		$tabs['license'] = array( 'label' => 'License', 'slug' => 'skunk-settings&product=license' );
-
-		// Default to first available product
-		if ( ! $product ) {
-			$keys = array_keys( $tabs );
-			$product = ! empty( $keys ) ? $keys[0] : '';
-		}
-
-		// Render masterbar
-		if ( class_exists( 'Skunk_Masterbar' ) ) {
-			Skunk_Masterbar::render( 'Settings', $product, $tabs );
-		}
-
-		// Render product settings content
-		switch ( $product ) {
-			case 'crm':
-				// Mount CRM React settings app
-				echo '<div class="skunk-page-content"><div id="skunkcrm-settings"></div></div>';
-				break;
-
-			case 'forms':
-				if ( class_exists( 'SkunkForms' ) ) {
-					$forms = \SkunkForms::get_instance();
-					$forms->render_settings_content();
+		if ( ! $handled ) {
+			// Default settings page
+			?>
+			<div class="wrap">
+				<h1>Skunk Suite Settings</h1>
+				<p>Select a product to configure its settings.</p>
+				<?php
+				$plugins = Skunk_Menu::get_plugins();
+				if ( ! empty( $plugins ) ) {
+					echo '<ul>';
+					foreach ( $plugins as $id => $config ) {
+						echo '<li><a href="' . esc_url( admin_url( 'admin.php?page=skunk-settings&product=' . $id ) ) . '">' . esc_html( $config['name'] ) . ' Settings</a></li>';
+					}
+					echo '</ul>';
 				}
-				break;
-
-			case 'pages':
 				?>
-				<div class="skunk-page-content" style="background: #fff; min-height: calc(100vh - 140px);">
-					<div style="max-width: 700px; margin: 0 auto; padding: 40px 24px;">
-						<div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 40px; text-align: center;">
-							<h2 style="margin: 0 0 8px; font-size: 20px; color: #111;">Pages Settings</h2>
-							<p style="color: #6b7280; margin: 0;">
-								No settings available for Skunk Pages yet. Check back after a future update.
-							</p>
-						</div>
-					</div>
-				</div>
-				<?php
-				break;
-
-			case 'license':
-				?>
-				<div class="skunk-page-content" style="background: #fff; min-height: calc(100vh - 140px);">
-					<div id="skunk-license-tab"></div>
-				</div>
-				<?php
-				break;
-
-			default:
-				?>
-				<div class="skunk-page-content" style="background: #fff; min-height: calc(100vh - 140px);">
-					<div style="max-width: 700px; margin: 0 auto; padding: 40px 24px;">
-						<div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 40px; text-align: center;">
-							<h2 style="margin: 0 0 8px; font-size: 20px; color: #111;">Settings</h2>
-							<p style="color: #6b7280; margin: 0 0 24px;">
-								Install a Skunk product to configure its settings.
-							</p>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=skunk-dashboard' ) ); ?>" style="color: #E50914; font-weight: 500; text-decoration: none;">← Back to Dashboard</a>
-						</div>
-					</div>
-				</div>
-				<?php
-				break;
-		}
-	}
-
-	/**
-	 * Handle activation redirect for the suite
-	 *
-	 * Plugins can set the 'skunk_suite_activation_redirect' option to redirect
-	 * to the suite dashboard (with NUX) on first activation.
-	 */
-	public static function maybe_redirect_to_nux() {
-		if ( ! get_option( 'skunk_suite_activation_redirect' ) ) {
-			return;
-		}
-
-		delete_option( 'skunk_suite_activation_redirect' );
-
-		if ( ! is_admin() || ! current_user_can( 'activate_plugins' ) ) {
-			return;
-		}
-
-		if ( isset( $_GET['activate-multi'] ) ) {
-			return;
-		}
-
-		// If suite NUX hasn't been completed, go to dashboard (which shows NUX overlay)
-		if ( ! get_option( 'skunk_suite_onboarded', false ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=skunk-dashboard' ) );
-			exit;
+			</div>
+			<?php
 		}
 	}
 }
