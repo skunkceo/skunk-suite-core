@@ -71,10 +71,7 @@ class Skunk_Menu {
 		// Attach hooks once
 		if ( ! self::$hooked ) {
 			self::$hooked = true;
-			// Priority 11: run AFTER SkunkCRM's add_admin_menu (priority 10)
-			// so we can detect its top-level 'skunkcrm' menu and use it as parent
-			add_action( 'admin_menu', array( __CLASS__, 'build_menu' ), 11 );
-			add_action( 'admin_head', array( __CLASS__, 'menu_css' ) );
+			add_action( 'admin_menu', array( __CLASS__, 'build_menu' ), 5 );
 		}
 	}
 
@@ -99,38 +96,31 @@ class Skunk_Menu {
 			define( 'SKUNK_UNIFIED_MENU', true );
 		}
 
-		// If SkunkCRM is active, it registers its own top-level "Skunk" menu
-		// with slug 'skunkcrm'. Use that as parent instead of creating a duplicate.
-		$crm_active = class_exists( 'SkunkCRM' ) || defined( 'SKUNKCRM_VERSION' );
-		$parent_slug = $crm_active ? 'skunkcrm' : self::MENU_SLUG;
+		// SVG icon for the menu
+		$icon_svg = 'data:image/svg+xml;base64,' . base64_encode(
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="14" fill="currentColor">S</text></svg>'
+		);
 
-		if ( ! $crm_active ) {
-			// SVG icon for the menu
-			$icon_svg = 'data:image/svg+xml;base64,' . base64_encode(
-				'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="14" fill="currentColor">S</text></svg>'
-			);
+		// Main menu page — renders the suite dashboard
+		add_menu_page(
+			'Skunk Suite',
+			'Skunk',
+			self::CAPABILITY,
+			self::MENU_SLUG,
+			array( 'Skunk_Dashboard', 'render' ),
+			$icon_svg,
+			30
+		);
 
-			// Main menu page — renders the suite dashboard
-			add_menu_page(
-				'Skunk Suite',
-				'Skunk',
-				self::CAPABILITY,
-				self::MENU_SLUG,
-				array( 'Skunk_Dashboard', 'render' ),
-				$icon_svg,
-				30
-			);
-
-			// Home submenu (replaces auto-generated duplicate)
-			add_submenu_page(
-				self::MENU_SLUG,
-				'Home',
-				'Home',
-				self::CAPABILITY,
-				self::MENU_SLUG,
-				array( 'Skunk_Dashboard', 'render' )
-			);
-		}
+		// Dashboard submenu (replaces auto-generated duplicate)
+		add_submenu_page(
+			self::MENU_SLUG,
+			'Dashboard',
+			'Dashboard',
+			self::CAPABILITY,
+			self::MENU_SLUG,
+			array( 'Skunk_Dashboard', 'render' )
+		);
 
 		// Sort registered plugins by position
 		$sorted = self::$plugins;
@@ -142,7 +132,7 @@ class Skunk_Menu {
 		foreach ( $sorted as $id => $config ) {
 			if ( ! empty( $config['slug'] ) && ! empty( $config['callback'] ) ) {
 				add_submenu_page(
-					$parent_slug,
+					self::MENU_SLUG,
 					$config['name'],
 					$config['name'],
 					$config['capability'],
@@ -175,27 +165,15 @@ class Skunk_Menu {
 			}
 		}
 
-		// More Products — penultimate (skip if CRM already adds this)
-		if ( ! $crm_active ) {
-			add_submenu_page(
-				$parent_slug,
-				'More Products',
-				'More Products ✦',
-				self::CAPABILITY,
-				'skunk-more-products',
-				array( 'Skunk_Dashboard', 'render_more_products' )
-			);
-
-			// Settings — always last
-			add_submenu_page(
-				$parent_slug,
-				'Settings',
-				'Settings',
-				self::CAPABILITY,
-				'skunk-settings',
-				array( 'Skunk_Dashboard', 'render_settings' )
-			);
-		}
+		// Settings — always last
+		add_submenu_page(
+			self::MENU_SLUG,
+			'Settings',
+			'Settings',
+			self::CAPABILITY,
+			'skunk-settings',
+			array( 'Skunk_Dashboard', 'render_settings' )
+		);
 	}
 
 	/**
@@ -205,15 +183,5 @@ class Skunk_Menu {
 	 */
 	public static function get_menu_slug() {
 		return self::MENU_SLUG;
-	}
-
-	/**
-	 * Output admin CSS for menu styling
-	 */
-	public static function menu_css() {
-		echo '<style>';
-		echo '#adminmenu a[href="admin.php?page=skunk-more-products"] { color: #f0c33c !important; font-weight: 600; }';
-		echo '#adminmenu li.current a[href="admin.php?page=skunk-more-products"] { color: #fff !important; }';
-		echo '</style>';
 	}
 }
