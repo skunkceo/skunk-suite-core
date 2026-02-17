@@ -660,9 +660,7 @@ class Skunk_Dashboard {
 		if ( Skunk_Product_Detect::is_active( 'forms' ) ) {
 			$tabs['forms'] = array( 'label' => 'Forms', 'slug' => 'skunk-settings&product=forms' );
 		}
-		if ( Skunk_Product_Detect::is_active( 'pages' ) ) {
-			$tabs['pages'] = array( 'label' => 'Pages', 'slug' => 'skunk-settings&product=pages' );
-		}
+		// Pages settings removed - no settings needed yet
 
 		// License tab — always visible
 		$tabs['license'] = array( 'label' => 'License', 'slug' => 'skunk-settings&product=license' );
@@ -690,21 +688,6 @@ class Skunk_Dashboard {
 					$forms = \SkunkForms::get_instance();
 					$forms->render_settings_content();
 				}
-				break;
-
-			case 'pages':
-				?>
-				<div class="skunk-page-content" style="background: #fff; min-height: calc(100vh - 140px);">
-					<div style="max-width: 700px; margin: 0 auto; padding: 40px 24px;">
-						<div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 40px; text-align: center;">
-							<h2 style="margin: 0 0 8px; font-size: 20px; color: #111;">Pages Settings</h2>
-							<p style="color: #6b7280; margin: 0;">
-								No settings available for Skunk Pages yet. Check back after a future update.
-							</p>
-						</div>
-					</div>
-				</div>
-				<?php
 				break;
 
 			case 'license':
