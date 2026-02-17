@@ -90,8 +90,7 @@ class Skunk_Menu {
 	/**
 	 * Build the admin menu
 	 *
-	 * Called at admin_menu priority 5 (early) so plugins adding submenus at
-	 * default priority 10 can add under this parent.
+	 * Called at admin_menu priority 11 so plugins can register first.
 	 */
 	public static function build_menu() {
 		// Set global flag so plugins know unified menu is active
@@ -99,18 +98,43 @@ class Skunk_Menu {
 			define( 'SKUNK_UNIFIED_MENU', true );
 		}
 
-		// If SkunkCRM is active, it registers its own top-level "Skunk" menu
-		// with slug 'skunkcrm'. Use that as parent instead of creating a duplicate.
-		$crm_active = class_exists( 'SkunkCRM' ) || defined( 'SKUNKCRM_VERSION' );
-		$parent_slug = $crm_active ? 'skunkcrm' : self::MENU_SLUG;
+		// Find the primary plugin (if any)
+		$primary_plugin = null;
+		foreach ( self::$plugins as $id => $config ) {
+			if ( ! empty( $config['primary'] ) ) {
+				$primary_plugin = $config;
+				break;
+			}
+		}
 
-		if ( ! $crm_active ) {
+		// Determine parent slug and create top-level menu
+		if ( $primary_plugin && ! empty( $primary_plugin['slug'] ) ) {
+			// Use primary plugin's slug as parent
+			$parent_slug = $primary_plugin['slug'];
+			
 			// SVG icon for the menu
 			$icon_svg = 'data:image/svg+xml;base64,' . base64_encode(
 				'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="14" fill="currentColor">S</text></svg>'
 			);
 
-			// Main menu page — renders the suite dashboard
+			// Create top-level menu using primary plugin's callback
+			add_menu_page(
+				'Skunk Suite',
+				'Skunk',
+				$primary_plugin['capability'],
+				$parent_slug,
+				$primary_plugin['callback'],
+				$icon_svg,
+				30
+			);
+		} else {
+			// No primary plugin - use generic dashboard
+			$parent_slug = self::MENU_SLUG;
+			
+			$icon_svg = 'data:image/svg+xml;base64,' . base64_encode(
+				'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="14" fill="currentColor">S</text></svg>'
+			);
+
 			add_menu_page(
 				'Skunk Suite',
 				'Skunk',
