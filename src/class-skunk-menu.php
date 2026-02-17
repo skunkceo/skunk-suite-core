@@ -107,37 +107,37 @@ class Skunk_Menu {
 			}
 		}
 
-		// Determine parent slug and create top-level menu
-		if ( $primary_plugin && ! empty( $primary_plugin['slug'] ) ) {
-			// Use primary plugin's slug as parent
-			$parent_slug = $primary_plugin['slug'];
-			
-			// SVG icon for the menu
-			$icon_svg = 'data:image/svg+xml;base64,' . base64_encode(
-				'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="14" fill="currentColor">S</text></svg>'
-			);
+		// Determine parent slug
+		$parent_slug = self::MENU_SLUG;
+		
+		// SVG icon for the menu
+		$icon_svg = 'data:image/svg+xml;base64,' . base64_encode(
+			'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="14" fill="currentColor">S</text></svg>'
+		);
 
-			// Create top-level menu using primary plugin's callback
-			add_menu_page(
-				'Skunk Suite',
-				'Skunk',
-				$primary_plugin['capability'],
-				$parent_slug,
-				$primary_plugin['callback'],
-				$icon_svg,
-				30
-			);
+		// Create top-level menu - always use dashboard for Home
+		add_menu_page(
+			'Skunk Suite',
+			'Skunk',
+			self::CAPABILITY,
+			$parent_slug,
+			array( 'Skunk_Dashboard', 'render' ),
+			$icon_svg,
+			30
+		);
 
-			// Add Home submenu (redirects to primary plugin)
-			add_submenu_page(
-				$parent_slug,
-				'Home',
-				'Home',
-				$primary_plugin['capability'],
-				$parent_slug,
-				$primary_plugin['callback']
-			);
-		} else {
+		// Add Home submenu (suite dashboard/launchpad)
+		add_submenu_page(
+			$parent_slug,
+			'Home',
+			'Home',
+			self::CAPABILITY,
+			$parent_slug,
+			array( 'Skunk_Dashboard', 'render' )
+		);
+
+		// If we have a primary plugin, no need for separate generic dashboard
+		if ( false ) {
 			// No primary plugin - use generic dashboard
 			$parent_slug = self::MENU_SLUG;
 			
