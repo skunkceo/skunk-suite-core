@@ -127,6 +127,16 @@ class Skunk_Menu {
 				$icon_svg,
 				30
 			);
+
+			// Add Home submenu (redirects to primary plugin)
+			add_submenu_page(
+				$parent_slug,
+				'Home',
+				'Home',
+				$primary_plugin['capability'],
+				$parent_slug,
+				$primary_plugin['callback']
+			);
 		} else {
 			// No primary plugin - use generic dashboard
 			$parent_slug = self::MENU_SLUG;
